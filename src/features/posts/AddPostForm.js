@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import { addPost } from "./postsSlice";
+import { addNewPost } from "./postsSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { selectAllUsers } from "../users/usersSlice";
 
@@ -10,21 +10,32 @@ const AddPostForm = () => {
 
   const [formData, setFormData] = useState({
     title: "",
-    content: "",
+    body: "",
     userId: "",
   });
+
+  const [addPostStatus, setAddPostStatus] = useState("idle");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-  const canSave = formData.title && formData.content && formData.userId;
 
-  const handleformSave = (e) => {
+  const canSave =
+    Object.values(formData).every(Boolean) && addPostStatus === "idle";
+
+  const handleFormSave = (e) => {
     e.preventDefault();
     if (canSave) {
-      dispatch(addPost(formData));
-      setFormData({ title: "", content: "", userId: "" });
+      try {
+        setAddPostStatus("pending");
+        dispatch(addNewPost(formData)).unwrap();
+        setFormData({ title: "", body: "", userId: "" });
+      } catch (error) {
+        console.log({ error });
+      } finally {
+        setAddPostStatus("idle");
+      }
     }
   };
 
@@ -38,7 +49,7 @@ const AddPostForm = () => {
     <>
       <h3>Add Post</h3>
       <form
-        onSubmit={handleformSave}
+        onSubmit={handleFormSave}
         style={{ display: "flex", flexDirection: "column" }}
       >
         <input
@@ -52,10 +63,10 @@ const AddPostForm = () => {
           {userOptions}
         </select>
         <textarea
-          name="content"
+          name="body"
           placeholder="Enter Content"
           onChange={handleChange}
-          value={formData.content}
+          value={formData.body}
         />
         <button type="submit" disabled={!canSave}>
           Save
